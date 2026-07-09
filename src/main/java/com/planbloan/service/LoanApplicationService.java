@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 
@@ -43,8 +44,7 @@ public class LoanApplicationService {
     public LoanApplicationResponse create(CurrentUser currentUser, LoanApplicationRequest request) {
         User applicant = userRepository.findById(currentUser.id())
                 .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "사용자를 찾을 수 없습니다."));
-        LoanCompany company = loanCompanyRepository.findById(request.loanCompanyId())
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "대부업체를 찾을 수 없습니다."));
+        LoanCompany company = resolveLoanCompany(request.loanCompanyId());
 
         if (request.applicantBirthDate() != null) applicant.setBirthDate(request.applicantBirthDate());
         if (request.applicantGender() != null) applicant.setGender(request.applicantGender());
@@ -54,11 +54,14 @@ public class LoanApplicationService {
         LoanApplication application = LoanApplication.builder()
                 .applicant(applicant)
                 .loanCompany(company)
+                .loanType(request.loanType())
+                .collateralAddress(request.collateralAddress())
                 .desiredAmount(request.desiredAmount())
-                .desiredPeriodMonths(request.desiredPeriodMonths())
                 .monthlyIncome(request.monthlyIncome())
                 .employmentType(request.employmentType())
-                .existingDebt(request.existingDebt())
+                .creditScoreKcb(request.creditScoreKcb())
+                .creditScoreNice(request.creditScoreNice())
+                .existingDebt(request.existingDebt() != null ? request.existingDebt() : BigDecimal.ZERO)
                 .memo(request.memo())
                 .build();
         application = loanApplicationRepository.save(application);
@@ -161,5 +164,17 @@ public class LoanApplicationService {
             throw new ApiException(HttpStatus.FORBIDDEN, "본인의 신청 건만 수정할 수 있습니다.");
         }
         return application;
+    }
+
+    /** 고객은 더 이상 대부업체를 직접 선택하지 않으므로, 미지정 시 활성 상태인 첫 번째 대부업체로 자동 배정한다. */
+    private LoanCompany resolveLoanCompany(Long loanCompanyId) {
+        if (loanCompanyId != null) {
+            return loanCompanyRepository.findById(loanCompanyId)
+                    .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "대부업체를 찾을 수 없습니다."));
+        }
+        return loanCompanyRepository.findAll().stream()
+                .filter(LoanCompany::isActive)
+                .findFirst()
+                .orElseThrow(() -> new ApiException(HttpStatus.CONFLICT, "이용 가능한 대부업체가 없습니다."));
     }
 }

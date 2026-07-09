@@ -34,10 +34,17 @@ public class LoanApplication {
     @JoinColumn(name = "loan_company_id", nullable = false)
     private LoanCompany loanCompany;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private LoanType loanType;
+
+    /** 담보 주소지 - 부동산담보대출인 경우에만 사용 */
+    private String collateralAddress;
+
     @Column(nullable = false)
     private BigDecimal desiredAmount;
 
-    @Column(nullable = false)
+    /** 희망 상환기간 - 더 이상 신청서에서 입력받지 않음 (승인 시 대부업체가 결정) */
     private Integer desiredPeriodMonths;
 
     @Column(nullable = false)
@@ -47,8 +54,13 @@ public class LoanApplication {
     @Column(nullable = false)
     private EmploymentType employmentType;
 
+    /** 신용점수 - 고객이 직접 입력 (KCB/NICE 실연동 없음) */
+    private Integer creditScoreKcb;
+    private Integer creditScoreNice;
+
     @Column(nullable = false)
-    private BigDecimal existingDebt;
+    @Builder.Default
+    private BigDecimal existingDebt = BigDecimal.ZERO;
 
     @Column(columnDefinition = "TEXT")
     private String memo;

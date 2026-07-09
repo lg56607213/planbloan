@@ -1,11 +1,13 @@
-import { FormEvent, useEffect, useState } from 'react'
+import { FormEvent, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Home, Car, CreditCard, ShieldCheck, Wallet, Banknote, CheckCircle2 } from 'lucide-react'
 import { api } from '../api/client'
 
-interface LoanCompany {
-  id: number
-  name: string
-}
+const LOAN_TYPES = [
+  { value: 'REAL_ESTATE_COLLATERAL', label: '부동산 담보대출', desc: '주택·상가 등 부동산을 담보로', Icon: Home },
+  { value: 'CAR_COLLATERAL', label: '자동차 담보대출', desc: '보유 차량을 담보로', Icon: Car },
+  { value: 'CREDIT', label: '신용대출', desc: '담보 없이 신용으로', Icon: CreditCard },
+]
 
 const EMPLOYMENT_TYPES = [
   { value: 'EMPLOYEE', label: '직장인' },
@@ -23,15 +25,52 @@ const DOCUMENT_TYPES = [
   { value: 'OTHER', label: '기타 서류' },
 ]
 
+function SectionCard({ step, title, children }: { step: number; title: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 sm:p-6">
+      <div className="flex items-center gap-2.5 mb-4">
+        <span className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-600 text-white text-sm font-semibold shrink-0">
+          {step}
+        </span>
+        <h2 className="font-semibold text-gray-900 text-base">{title}</h2>
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function AmountField({ label, value, onChange, placeholder }: {
+  label: string; value: string; onChange: (v: string) => void; placeholder?: string
+}) {
+  return (
+    <label className="block">
+      <span className="block text-sm font-medium text-gray-700 mb-1.5">{label}</span>
+      <div className="relative">
+        <input
+          type="number"
+          inputMode="numeric"
+          required
+          min={0}
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full border border-gray-300 rounded-xl pl-4 pr-12 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
+        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm">원</span>
+      </div>
+    </label>
+  )
+}
+
 export default function ApplyLoanPage() {
-  const [companies, setCompanies] = useState<LoanCompany[]>([])
   const [form, setForm] = useState({
-    loanCompanyId: '',
+    loanType: '',
+    collateralAddress: '',
     desiredAmount: '',
-    desiredPeriodMonths: '',
     monthlyIncome: '',
     employmentType: 'EMPLOYEE',
-    existingDebt: '0',
+    creditScoreKcb: '',
+    creditScoreNice: '',
     memo: '',
   })
   const [error, setError] = useState<string | null>(null)
@@ -40,21 +79,22 @@ export default function ApplyLoanPage() {
   const [uploadMessage, setUploadMessage] = useState<string | null>(null)
   const navigate = useNavigate()
 
-  useEffect(() => {
-    api.get('/api/loan-companies').then((res) => setCompanies(res.data))
-  }, [])
-
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setError(null)
+    if (form.loanType === 'REAL_ESTATE_COLLATERAL' && !form.collateralAddress.trim()) {
+      setError('담보로 제공할 부동산 주소지를 입력해 주세요.')
+      return
+    }
     try {
       const { data } = await api.post('/api/loan-applications', {
-        loanCompanyId: Number(form.loanCompanyId),
+        loanType: form.loanType,
+        collateralAddress: form.loanType === 'REAL_ESTATE_COLLATERAL' ? form.collateralAddress : null,
         desiredAmount: Number(form.desiredAmount),
-        desiredPeriodMonths: Number(form.desiredPeriodMonths),
         monthlyIncome: Number(form.monthlyIncome),
         employmentType: form.employmentType,
-        existingDebt: Number(form.existingDebt),
+        creditScoreKcb: Number(form.creditScoreKcb),
+        creditScoreNice: Number(form.creditScoreNice),
         memo: form.memo,
       })
       setApplicationId(data.id)
@@ -82,31 +122,36 @@ export default function ApplyLoanPage() {
 
   if (applicationId) {
     return (
-      <div className="max-w-md mx-auto space-y-6">
-        <div className="bg-green-50 border border-green-200 rounded p-4">
-          <p className="font-medium">대출 신청이 접수되었습니다 (신청번호 #{applicationId}).</p>
-          <p className="text-sm text-gray-600 mt-1">
-            아래에서 신분증, 소득증빙 등 서류를 업로드해 주시면 대부업체 심사가 더 빨리 진행됩니다.
-          </p>
+      <div className="max-w-lg mx-auto space-y-5">
+        <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-5 flex gap-3">
+          <CheckCircle2 className="w-6 h-6 text-green-600 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold text-gray-900">대출 신청이 접수되었습니다 (신청번호 #{applicationId})</p>
+            <p className="text-sm text-gray-600 mt-1">
+              아래에서 신분증, 소득증빙 등 서류를 업로드해 주시면 대부업체 심사가 더 빨리 진행됩니다.
+            </p>
+          </div>
         </div>
-        <form onSubmit={handleUpload} className="space-y-3 border rounded p-4">
-          <h2 className="font-medium">서류 업로드</h2>
+        <form onSubmit={handleUpload} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 sm:p-6 space-y-3">
+          <h2 className="font-semibold text-gray-900">서류 업로드</h2>
           <select
             value={uploadType}
             onChange={(e) => setUploadType(e.target.value)}
-            className="w-full border rounded px-3 py-2"
+            className="w-full border border-gray-300 rounded-xl px-3 py-3 text-base"
           >
             {DOCUMENT_TYPES.map((t) => (
               <option key={t.value} value={t.value}>{t.label}</option>
             ))}
           </select>
-          <input type="file" name="file" required className="w-full" />
+          <input type="file" name="file" required className="w-full text-sm" />
           {uploadMessage && <p className="text-sm text-gray-600">{uploadMessage}</p>}
-          <button type="submit" className="bg-blue-600 text-white rounded px-4 py-2">업로드</button>
+          <button type="submit" className="bg-blue-600 hover:bg-blue-700 transition text-white rounded-xl px-4 py-3 font-medium w-full sm:w-auto">
+            업로드
+          </button>
         </form>
         <button
           onClick={() => navigate('/my-applications')}
-          className="w-full border rounded py-2"
+          className="w-full border border-gray-300 rounded-xl py-3 font-medium text-gray-700 bg-white hover:bg-gray-50 transition"
         >
           내 신청 내역으로 이동
         </button>
@@ -115,73 +160,131 @@ export default function ApplyLoanPage() {
   }
 
   return (
-    <div className="max-w-md mx-auto">
-      <h1 className="text-2xl font-bold mb-6">대출 신청</h1>
+    <div className="max-w-lg mx-auto">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">대출 신청</h1>
+        <p className="text-sm text-gray-500 mt-1">아래 정보를 입력하시면 제휴 대부업체가 검토 후 연락드립니다.</p>
+      </div>
+
       <form onSubmit={handleSubmit} className="space-y-4">
-        <select
-          required
-          value={form.loanCompanyId}
-          onChange={(e) => setForm({ ...form, loanCompanyId: e.target.value })}
-          className="w-full border rounded px-3 py-2"
+        <SectionCard step={1} title="대출종류">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {LOAN_TYPES.map(({ value, label, desc, Icon }) => {
+              const selected = form.loanType === value
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setForm({ ...form, loanType: value })}
+                  className={`flex flex-col items-center text-center gap-1.5 rounded-xl border-2 p-4 transition ${
+                    selected ? 'border-blue-600 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <Icon className={selected ? 'text-blue-600' : 'text-gray-500'} size={26} />
+                  <span className={`text-sm font-semibold ${selected ? 'text-blue-700' : 'text-gray-800'}`}>{label}</span>
+                  <span className="text-xs text-gray-500">{desc}</span>
+                </button>
+              )
+            })}
+          </div>
+          {form.loanType === 'REAL_ESTATE_COLLATERAL' && (
+            <div className="mt-4">
+              <label className="block">
+                <span className="block text-sm font-medium text-gray-700 mb-1.5">담보 제공 부동산 주소지</span>
+                <input
+                  required
+                  placeholder="예: 서울특별시 강남구 테헤란로 100"
+                  value={form.collateralAddress}
+                  onChange={(e) => setForm({ ...form, collateralAddress: e.target.value })}
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </label>
+            </div>
+          )}
+        </SectionCard>
+
+        <SectionCard step={2} title="대출 정보">
+          <div className="space-y-4">
+            <AmountField label="희망 대출금액" placeholder="5,000,000" value={form.desiredAmount}
+              onChange={(v) => setForm({ ...form, desiredAmount: v })} />
+            <AmountField label="월 소득" placeholder="3,000,000" value={form.monthlyIncome}
+              onChange={(v) => setForm({ ...form, monthlyIncome: v })} />
+          </div>
+        </SectionCard>
+
+        <SectionCard step={3} title="직업 형태">
+          <div className="flex flex-wrap gap-2">
+            {EMPLOYMENT_TYPES.map((t) => {
+              const selected = form.employmentType === t.value
+              return (
+                <button
+                  key={t.value}
+                  type="button"
+                  onClick={() => setForm({ ...form, employmentType: t.value })}
+                  className={`rounded-full border-2 px-4 py-2 text-sm font-medium transition ${
+                    selected ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-200 text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              )
+            })}
+          </div>
+        </SectionCard>
+
+        <SectionCard step={4} title="신용점수">
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block">
+              <span className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-1.5">
+                <ShieldCheck size={15} className="text-gray-400" /> KCB
+              </span>
+              <input
+                type="number" inputMode="numeric" required min={0} max={1000}
+                placeholder="예: 750"
+                value={form.creditScoreKcb}
+                onChange={(e) => setForm({ ...form, creditScoreKcb: e.target.value })}
+                className="w-full border border-gray-300 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </label>
+            <label className="block">
+              <span className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-1.5">
+                <ShieldCheck size={15} className="text-gray-400" /> NICE
+              </span>
+              <input
+                type="number" inputMode="numeric" required min={0} max={1000}
+                placeholder="예: 780"
+                value={form.creditScoreNice}
+                onChange={(e) => setForm({ ...form, creditScoreNice: e.target.value })}
+                className="w-full border border-gray-300 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </label>
+          </div>
+          <p className="text-xs text-gray-400 mt-2">본인의 신용점수 조회 앱(KCB/NICE)에서 확인한 점수를 입력해 주세요.</p>
+        </SectionCard>
+
+        <SectionCard step={5} title="추가 전달사항 (선택)">
+          <div className="flex items-start gap-2">
+            <Wallet size={16} className="text-gray-300 mt-2 shrink-0" />
+            <textarea
+              placeholder="대부업체에 전달하고 싶은 내용이 있다면 적어주세요."
+              value={form.memo}
+              onChange={(e) => setForm({ ...form, memo: e.target.value })}
+              rows={3}
+              className="w-full border border-gray-300 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+        </SectionCard>
+
+        {error && (
+          <p className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-xl px-4 py-3">{error}</p>
+        )}
+
+        <button
+          type="submit"
+          disabled={!form.loanType}
+          className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition text-white rounded-xl py-3.5 font-semibold text-base shadow-sm"
         >
-          <option value="">대부업체 선택</option>
-          {companies.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
-        <input
-          type="number"
-          placeholder="희망 대출금액 (원)"
-          required
-          min={1}
-          value={form.desiredAmount}
-          onChange={(e) => setForm({ ...form, desiredAmount: e.target.value })}
-          className="w-full border rounded px-3 py-2"
-        />
-        <input
-          type="number"
-          placeholder="희망 상환기간 (개월)"
-          required
-          min={1}
-          value={form.desiredPeriodMonths}
-          onChange={(e) => setForm({ ...form, desiredPeriodMonths: e.target.value })}
-          className="w-full border rounded px-3 py-2"
-        />
-        <input
-          type="number"
-          placeholder="월 소득 (원)"
-          required
-          min={0}
-          value={form.monthlyIncome}
-          onChange={(e) => setForm({ ...form, monthlyIncome: e.target.value })}
-          className="w-full border rounded px-3 py-2"
-        />
-        <select
-          value={form.employmentType}
-          onChange={(e) => setForm({ ...form, employmentType: e.target.value })}
-          className="w-full border rounded px-3 py-2"
-        >
-          {EMPLOYMENT_TYPES.map((t) => (
-            <option key={t.value} value={t.value}>{t.label}</option>
-          ))}
-        </select>
-        <input
-          type="number"
-          placeholder="기존 부채 총액 (원)"
-          required
-          min={0}
-          value={form.existingDebt}
-          onChange={(e) => setForm({ ...form, existingDebt: e.target.value })}
-          className="w-full border rounded px-3 py-2"
-        />
-        <textarea
-          placeholder="추가 메모 (선택)"
-          value={form.memo}
-          onChange={(e) => setForm({ ...form, memo: e.target.value })}
-          className="w-full border rounded px-3 py-2"
-        />
-        {error && <p className="text-red-600 text-sm">{error}</p>}
-        <button type="submit" className="w-full bg-blue-600 text-white rounded py-2 font-medium">
+          <Banknote size={18} />
           신청하기
         </button>
       </form>

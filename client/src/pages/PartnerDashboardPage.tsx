@@ -1,16 +1,34 @@
 import { useEffect, useState } from 'react'
+import { Home, Car, CreditCard } from 'lucide-react'
 import { api } from '../api/client'
 
 interface LoanApplication {
   id: number
   applicantName: string
+  loanType: string
+  collateralAddress: string | null
   desiredAmount: number
-  desiredPeriodMonths: number
   monthlyIncome: number
   employmentType: string
+  creditScoreKcb: number | null
+  creditScoreNice: number | null
   existingDebt: number
   status: string
   documents: { id: number; type: string; originalFileName: string }[]
+}
+
+const LOAN_TYPE_META: Record<string, { label: string; Icon: typeof Home }> = {
+  REAL_ESTATE_COLLATERAL: { label: '부동산 담보대출', Icon: Home },
+  CAR_COLLATERAL: { label: '자동차 담보대출', Icon: Car },
+  CREDIT: { label: '신용대출', Icon: CreditCard },
+}
+
+const EMPLOYMENT_LABEL: Record<string, string> = {
+  EMPLOYEE: '직장인',
+  SELF_EMPLOYED: '자영업자',
+  FREELANCER: '프리랜서',
+  UNEMPLOYED: '무직',
+  OTHER: '기타',
 }
 
 export default function PartnerDashboardPage() {
@@ -26,10 +44,10 @@ export default function PartnerDashboardPage() {
   }, [])
 
   function updateField(id: number, field: string, value: string) {
-    setDecisionState((prev) => ({
-      ...prev,
-      [id]: { rate: '', limit: '', period: '', reason: '', ...prev[id], [field]: value },
-    }))
+    setDecisionState((prev) => {
+      const current = prev[id] ?? { rate: '', limit: '', period: '', reason: '' }
+      return { ...prev, [id]: { ...current, [field]: value } }
+    })
   }
 
   async function approve(id: number) {
@@ -54,56 +72,71 @@ export default function PartnerDashboardPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">대출 신청 심사</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">대출 신청 심사</h1>
       <div className="space-y-4">
         {applications.map((app) => {
           const d = decisionState[app.id] ?? { rate: '', limit: '', period: '', reason: '' }
+          const typeMeta = LOAN_TYPE_META[app.loanType]
+          const TypeIcon = typeMeta?.Icon ?? CreditCard
+          const decidable = app.status === 'SUBMITTED' || app.status === 'UNDER_REVIEW'
           return (
-            <div key={app.id} className="border rounded p-4">
-              <div className="flex justify-between">
-                <p className="font-medium">{app.applicantName}</p>
-                <span className="text-sm px-2 py-1 rounded bg-gray-100">{app.status}</span>
+            <div key={app.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
+              <div className="flex justify-between items-start gap-3">
+                <div className="flex items-start gap-3">
+                  <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-blue-50 text-blue-600 shrink-0">
+                    <TypeIcon size={20} />
+                  </span>
+                  <div>
+                    <p className="font-semibold text-gray-900">{app.applicantName}</p>
+                    <p className="text-sm text-gray-500">{typeMeta?.label ?? app.loanType}</p>
+                  </div>
+                </div>
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 shrink-0">
+                  {app.status}
+                </span>
               </div>
-              <p className="text-sm text-gray-600 mt-1">
-                희망 {app.desiredAmount.toLocaleString()}원 / {app.desiredPeriodMonths}개월 · 월소득 {app.monthlyIncome.toLocaleString()}원
-                · 기존부채 {app.existingDebt.toLocaleString()}원 · {app.employmentType}
-              </p>
-              <p className="text-xs text-gray-400 mt-1">첨부 서류: {app.documents.map((d) => d.originalFileName).join(', ') || '없음'}</p>
 
-              {app.status === 'SUBMITTED' || app.status === 'UNDER_REVIEW' ? (
-                <div className="mt-3 grid grid-cols-2 gap-2">
+              <div className="mt-3 pt-3 border-t border-gray-100 text-sm text-gray-600 space-y-1">
+                <p>희망금액 {app.desiredAmount.toLocaleString()}원 · 월소득 {app.monthlyIncome.toLocaleString()}원 · 기존부채 {app.existingDebt.toLocaleString()}원</p>
+                <p>{EMPLOYMENT_LABEL[app.employmentType] ?? app.employmentType} · 신용점수 KCB {app.creditScoreKcb ?? '-'} / NICE {app.creditScoreNice ?? '-'}</p>
+                {app.collateralAddress && <p>담보 주소지: {app.collateralAddress}</p>}
+                <p className="text-xs text-gray-400">첨부 서류: {app.documents.map((doc) => doc.originalFileName).join(', ') || '없음'}</p>
+              </div>
+
+              {decidable && (
+                <div className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-2 gap-2">
                   <input
                     placeholder="승인 금리(%)"
                     value={d.rate}
                     onChange={(e) => updateField(app.id, 'rate', e.target.value)}
-                    className="border rounded px-2 py-1 text-sm"
+                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                   <input
                     placeholder="승인 한도(원)"
                     value={d.limit}
                     onChange={(e) => updateField(app.id, 'limit', e.target.value)}
-                    className="border rounded px-2 py-1 text-sm"
+                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                   <input
                     placeholder="상환기간(개월)"
                     value={d.period}
                     onChange={(e) => updateField(app.id, 'period', e.target.value)}
-                    className="border rounded px-2 py-1 text-sm"
+                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                   <input
                     placeholder="미승인 사유"
                     value={d.reason}
                     onChange={(e) => updateField(app.id, 'reason', e.target.value)}
-                    className="border rounded px-2 py-1 text-sm"
+                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
-                  <button onClick={() => approve(app.id)} className="bg-green-600 text-white rounded py-1 text-sm">
+                  <button onClick={() => approve(app.id)} className="bg-green-600 hover:bg-green-700 transition text-white rounded-lg py-2 text-sm font-medium">
                     승인
                   </button>
-                  <button onClick={() => reject(app.id)} className="bg-red-600 text-white rounded py-1 text-sm">
+                  <button onClick={() => reject(app.id)} className="bg-red-600 hover:bg-red-700 transition text-white rounded-lg py-2 text-sm font-medium">
                     미승인
                   </button>
                 </div>
-              ) : null}
+              )}
             </div>
           )
         })}
