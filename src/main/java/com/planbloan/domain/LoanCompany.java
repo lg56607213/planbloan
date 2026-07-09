@@ -38,6 +38,12 @@ public class LoanCompany {
     @Column
     private String registrationNumber;
 
+    /** 법인등록번호 */
+    private String corporateRegistrationNumber;
+
+    /** 대표자 */
+    private String representativeName;
+
     /** 대부업자 주소 */
     private String address;
 
@@ -65,6 +71,12 @@ public class LoanCompany {
     /** 대부업법상 최고이자율 (연 %) - 법 개정 시 갱신 */
     private BigDecimal statutoryMaxAnnualRate;
 
+    /** 본사 승인 상태 - APPROVED 상태여야 채무자 정보 열람 및 매칭 대상이 됨 */
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private boolean active;
+    @Builder.Default
+    private CompanyVerificationStatus verificationStatus = CompanyVerificationStatus.PENDING_INFO;
+
+    @Column(columnDefinition = "TEXT")
+    private String rejectionReason;
 }

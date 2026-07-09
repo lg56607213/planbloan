@@ -1,5 +1,6 @@
 package com.planbloan.service;
 
+import com.planbloan.domain.CompanyVerificationStatus;
 import com.planbloan.dto.LoanCompanyResponse;
 import com.planbloan.repository.LoanCompanyRepository;
 import org.springframework.stereotype.Service;
@@ -17,7 +18,7 @@ public class LoanCompanyService {
 
     public List<LoanCompanyResponse> listActive() {
         return loanCompanyRepository.findAll().stream()
-                .filter(com.planbloan.domain.LoanCompany::isActive)
+                .filter(c -> c.getVerificationStatus() == CompanyVerificationStatus.APPROVED)
                 .map(LoanCompanyResponse::from)
                 .toList();
     }

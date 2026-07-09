@@ -29,9 +29,12 @@ export default function Layout() {
             )}
             {user?.role === 'CUSTOMER' && <Link to="/apply" className="px-2 py-1 text-gray-600 hover:text-gray-900">대출 신청</Link>}
             {user?.role === 'CUSTOMER' && <Link to="/my-applications" className="px-2 py-1 text-gray-600 hover:text-gray-900">내 신청 내역</Link>}
+            {user?.role === 'PARTNER_ADMIN' && <Link to="/partner/company" className="px-2 py-1 text-gray-600 hover:text-gray-900">업체 정보</Link>}
+            {user?.role === 'PARTNER_ADMIN' && <Link to="/partner/criteria" className="px-2 py-1 text-gray-600 hover:text-gray-900">대출조건</Link>}
             {(user?.role === 'PARTNER_ADMIN' || user?.role === 'HQ_ADMIN') && (
               <Link to="/partner" className="px-2 py-1 text-gray-600 hover:text-gray-900">심사 관리</Link>
             )}
+            {user?.role === 'HQ_ADMIN' && <Link to="/admin/partners" className="px-2 py-1 text-gray-600 hover:text-gray-900">제휴사 관리</Link>}
             {user && (
               <button onClick={handleLogout} className="flex items-center gap-1 px-2 py-1 text-gray-500 hover:text-gray-800">
                 <LogOut size={14} />

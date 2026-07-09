@@ -22,7 +22,8 @@ export default function LoginPage() {
         role: data.role,
       })
       if (data.role === 'CUSTOMER') navigate('/my-applications')
-      else navigate('/partner')
+      else if (data.role === 'HQ_ADMIN') navigate('/admin/partners')
+      else navigate('/partner/company')
     } catch (err: any) {
       setError(err.response?.data?.message ?? '로그인에 실패했습니다.')
     }
@@ -33,8 +34,8 @@ export default function LoginPage() {
       <h1 className="text-2xl font-bold mb-6">로그인</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
         <input
-          type="email"
-          placeholder="이메일"
+          type="text"
+          placeholder="이메일 또는 아이디"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}

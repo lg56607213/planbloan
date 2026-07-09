@@ -11,8 +11,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record LoanApplicationRequest(
-        /** 대부업체는 더 이상 고객이 선택하지 않음 - 미지정 시 서버가 자동 배정 */
-        Long loanCompanyId,
+        /** 매칭된 대출 오퍼(/api/loan-offers) 중 고객이 선택한 대부업체 */
+        @NotNull Long loanCompanyId,
 
         @NotNull LoanType loanType,
         /** 부동산담보대출인 경우 필수 */

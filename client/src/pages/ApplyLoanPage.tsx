@@ -1,6 +1,6 @@
 import { FormEvent, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Home, Car, CreditCard, ShieldCheck, Wallet, Banknote, CheckCircle2 } from 'lucide-react'
+import { Home, Car, CreditCard, ShieldCheck, Wallet, Banknote, CheckCircle2, Search, Percent } from 'lucide-react'
 import { api } from '../api/client'
 
 const LOAN_TYPES = [
@@ -24,6 +24,14 @@ const DOCUMENT_TYPES = [
   { value: 'EMPLOYMENT_PROOF', label: '재직/사업자 증빙' },
   { value: 'OTHER', label: '기타 서류' },
 ]
+
+interface Offer {
+  loanCompanyId: number
+  loanCompanyName: string
+  offeredAmount: number
+  interestRateAnnual: number
+  maxLtvPercent: number | null
+}
 
 function SectionCard({ step, title, children }: { step: number; title: string; children: React.ReactNode }) {
   return (
@@ -63,6 +71,7 @@ function AmountField({ label, value, onChange, placeholder }: {
 }
 
 export default function ApplyLoanPage() {
+  const [phase, setPhase] = useState<'form' | 'offers' | 'submitted'>('form')
   const [form, setForm] = useState({
     loanType: '',
     collateralAddress: '',
@@ -73,13 +82,15 @@ export default function ApplyLoanPage() {
     creditScoreNice: '',
     memo: '',
   })
+  const [offers, setOffers] = useState<Offer[]>([])
+  const [searched, setSearched] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [applicationId, setApplicationId] = useState<number | null>(null)
   const [uploadType, setUploadType] = useState('ID_CARD')
   const [uploadMessage, setUploadMessage] = useState<string | null>(null)
   const navigate = useNavigate()
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleFindOffers(e: FormEvent) {
     e.preventDefault()
     setError(null)
     if (form.loanType === 'REAL_ESTATE_COLLATERAL' && !form.collateralAddress.trim()) {
@@ -87,7 +98,26 @@ export default function ApplyLoanPage() {
       return
     }
     try {
+      const { data } = await api.post('/api/loan-offers', {
+        loanType: form.loanType,
+        desiredAmount: Number(form.desiredAmount),
+        monthlyIncome: Number(form.monthlyIncome),
+        creditScoreKcb: Number(form.creditScoreKcb),
+        creditScoreNice: Number(form.creditScoreNice),
+      })
+      setOffers(data)
+      setSearched(true)
+      setPhase('offers')
+    } catch (err: any) {
+      setError(err.response?.data?.message ?? '조건 조회에 실패했습니다.')
+    }
+  }
+
+  async function handleApply(offer: Offer) {
+    setError(null)
+    try {
       const { data } = await api.post('/api/loan-applications', {
+        loanCompanyId: offer.loanCompanyId,
         loanType: form.loanType,
         collateralAddress: form.loanType === 'REAL_ESTATE_COLLATERAL' ? form.collateralAddress : null,
         desiredAmount: Number(form.desiredAmount),
@@ -98,6 +128,7 @@ export default function ApplyLoanPage() {
         memo: form.memo,
       })
       setApplicationId(data.id)
+      setPhase('submitted')
     } catch (err: any) {
       setError(err.response?.data?.message ?? '신청에 실패했습니다.')
     }
@@ -120,7 +151,7 @@ export default function ApplyLoanPage() {
     }
   }
 
-  if (applicationId) {
+  if (phase === 'submitted' && applicationId) {
     return (
       <div className="max-w-lg mx-auto space-y-5">
         <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-5 flex gap-3">
@@ -159,14 +190,61 @@ export default function ApplyLoanPage() {
     )
   }
 
+  if (phase === 'offers') {
+    return (
+      <div className="max-w-lg mx-auto space-y-5">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">이용 가능한 대출 조건</h1>
+          <p className="text-sm text-gray-500 mt-1">입력하신 정보로 조회한 결과입니다. 원하는 조건을 선택해 신청해 주세요.</p>
+        </div>
+
+        {searched && offers.length === 0 && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 text-center text-gray-500">
+            현재 조건에 맞는 대부업체가 없습니다. 신용점수나 희망금액을 조정해 다시 조회해 보세요.
+          </div>
+        )}
+
+        <div className="space-y-3">
+          {offers.map((offer) => (
+            <div key={offer.loanCompanyId} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="font-semibold text-gray-900">{offer.loanCompanyName}</p>
+                  <p className="text-lg font-bold text-blue-700 mt-1">{offer.offeredAmount.toLocaleString()}원까지</p>
+                  <p className="flex items-center gap-1 text-sm text-gray-600 mt-1">
+                    <Percent size={14} className="text-gray-400" /> 연 {offer.interestRateAnnual}%
+                    {offer.maxLtvPercent != null && <span className="ml-2 text-gray-400">· LTV {offer.maxLtvPercent}%까지</span>}
+                  </p>
+                </div>
+                <button onClick={() => handleApply(offer)}
+                  className="bg-blue-600 hover:bg-blue-700 transition text-white rounded-xl px-4 py-2.5 text-sm font-semibold shrink-0">
+                  이 조건으로 신청
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {error && <p className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-xl px-4 py-3">{error}</p>}
+
+        <button
+          onClick={() => setPhase('form')}
+          className="w-full border border-gray-300 rounded-xl py-3 font-medium text-gray-700 bg-white hover:bg-gray-50 transition"
+        >
+          정보 다시 입력하기
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-lg mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">대출 신청</h1>
-        <p className="text-sm text-gray-500 mt-1">아래 정보를 입력하시면 제휴 대부업체가 검토 후 연락드립니다.</p>
+        <p className="text-sm text-gray-500 mt-1">정보를 입력하시면 조건에 맞는 대부업체와 대출 조건을 바로 보여드립니다.</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleFindOffers} className="space-y-4">
         <SectionCard step={1} title="대출종류">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {LOAN_TYPES.map(({ value, label, desc, Icon }) => {
@@ -284,9 +362,12 @@ export default function ApplyLoanPage() {
           disabled={!form.loanType}
           className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition text-white rounded-xl py-3.5 font-semibold text-base shadow-sm"
         >
-          <Banknote size={18} />
-          신청하기
+          <Search size={18} />
+          이용 가능한 조건 조회하기
         </button>
+        <p className="text-center text-xs text-gray-400 flex items-center justify-center gap-1">
+          <Banknote size={12} /> 조회 후 원하는 조건을 선택하면 실제 신청이 접수됩니다.
+        </p>
       </form>
     </div>
   )

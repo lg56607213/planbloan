@@ -27,24 +27,27 @@ public class LoanApplicationService {
     private final UserRepository userRepository;
     private final GuarantorRepository guarantorRepository;
     private final FileStorageService fileStorageService;
+    private final LoanMatchingService loanMatchingService;
 
     public LoanApplicationService(LoanApplicationRepository loanApplicationRepository,
                                    LoanCompanyRepository loanCompanyRepository,
                                    UserRepository userRepository,
                                    GuarantorRepository guarantorRepository,
-                                   FileStorageService fileStorageService) {
+                                   FileStorageService fileStorageService,
+                                   LoanMatchingService loanMatchingService) {
         this.loanApplicationRepository = loanApplicationRepository;
         this.loanCompanyRepository = loanCompanyRepository;
         this.userRepository = userRepository;
         this.guarantorRepository = guarantorRepository;
         this.fileStorageService = fileStorageService;
+        this.loanMatchingService = loanMatchingService;
     }
 
     @Transactional
     public LoanApplicationResponse create(CurrentUser currentUser, LoanApplicationRequest request) {
         User applicant = userRepository.findById(currentUser.id())
                 .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "사용자를 찾을 수 없습니다."));
-        LoanCompany company = resolveLoanCompany(request.loanCompanyId());
+        LoanCompany company = resolveAndValidateLoanCompany(request);
 
         if (request.applicantBirthDate() != null) applicant.setBirthDate(request.applicantBirthDate());
         if (request.applicantGender() != null) applicant.setGender(request.applicantGender());
@@ -123,6 +126,9 @@ public class LoanApplicationService {
             if (reviewer.getLoanCompany() == null) {
                 throw new ApiException(HttpStatus.FORBIDDEN, "소속된 대부업체가 없습니다.");
             }
+            if (reviewer.getLoanCompany().getVerificationStatus() != CompanyVerificationStatus.APPROVED) {
+                throw new ApiException(HttpStatus.FORBIDDEN, "본사 승인이 완료되어야 채무자 정보를 열람할 수 있습니다.");
+            }
             applications = loanApplicationRepository.findByLoanCompany_IdOrderByCreatedAtDesc(reviewer.getLoanCompany().getId());
         }
         return applications.stream().map(LoanApplicationResponse::from).toList();
@@ -166,15 +172,18 @@ public class LoanApplicationService {
         return application;
     }
 
-    /** 고객은 더 이상 대부업체를 직접 선택하지 않으므로, 미지정 시 활성 상태인 첫 번째 대부업체로 자동 배정한다. */
-    private LoanCompany resolveLoanCompany(Long loanCompanyId) {
-        if (loanCompanyId != null) {
-            return loanCompanyRepository.findById(loanCompanyId)
-                    .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "대부업체를 찾을 수 없습니다."));
+    /** 고객이 매칭된 오퍼 중에서 선택한 대부업체가 실제로 승인된 업체이고 조건에 맞는지 재검증한다. */
+    private LoanCompany resolveAndValidateLoanCompany(LoanApplicationRequest request) {
+        LoanCompany company = loanCompanyRepository.findById(request.loanCompanyId())
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "대부업체를 찾을 수 없습니다."));
+        if (company.getVerificationStatus() != CompanyVerificationStatus.APPROVED) {
+            throw new ApiException(HttpStatus.CONFLICT, "현재 신청을 받을 수 없는 대부업체입니다.");
         }
-        return loanCompanyRepository.findAll().stream()
-                .filter(LoanCompany::isActive)
-                .findFirst()
-                .orElseThrow(() -> new ApiException(HttpStatus.CONFLICT, "이용 가능한 대부업체가 없습니다."));
+        boolean eligible = loanMatchingService.isEligible(company.getId(), request.loanType(),
+                request.creditScoreKcb(), request.creditScoreNice(), request.monthlyIncome());
+        if (!eligible) {
+            throw new ApiException(HttpStatus.CONFLICT, "선택하신 조건에 맞지 않는 대부업체입니다.");
+        }
+        return company;
     }
 }

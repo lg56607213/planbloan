@@ -7,6 +7,9 @@ import RegisterPage from './pages/RegisterPage'
 import ApplyLoanPage from './pages/ApplyLoanPage'
 import MyApplicationsPage from './pages/MyApplicationsPage'
 import PartnerDashboardPage from './pages/PartnerDashboardPage'
+import PartnerCompanyPage from './pages/PartnerCompanyPage'
+import PartnerCriteriaPage from './pages/PartnerCriteriaPage'
+import AdminPartnersPage from './pages/AdminPartnersPage'
 import ContractSigningPage from './pages/ContractSigningPage'
 
 export default function App() {
@@ -25,6 +28,15 @@ export default function App() {
 
         <Route element={<ProtectedRoute allowedRoles={['PARTNER_ADMIN', 'HQ_ADMIN']} />}>
           <Route path="/partner" element={<PartnerDashboardPage />} />
+        </Route>
+
+        <Route element={<ProtectedRoute allowedRoles={['PARTNER_ADMIN']} />}>
+          <Route path="/partner/company" element={<PartnerCompanyPage />} />
+          <Route path="/partner/criteria" element={<PartnerCriteriaPage />} />
+        </Route>
+
+        <Route element={<ProtectedRoute allowedRoles={['HQ_ADMIN']} />}>
+          <Route path="/admin/partners" element={<AdminPartnersPage />} />
         </Route>
       </Route>
     </Routes>
