@@ -24,6 +24,11 @@ public class PartnerLoanController {
         return loanApplicationService.listForReviewer(currentUser);
     }
 
+    @PatchMapping("/{id}/start-review")
+    public LoanApplicationResponse startReview(CurrentUser currentUser, @PathVariable Long id) {
+        return loanApplicationService.startReview(currentUser, id);
+    }
+
     @PatchMapping("/{id}/decision")
     public LoanApplicationResponse decide(CurrentUser currentUser, @PathVariable Long id,
                                            @Valid @RequestBody LoanDecisionRequest request) {

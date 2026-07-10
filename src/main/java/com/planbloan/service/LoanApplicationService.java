@@ -135,18 +135,19 @@ public class LoanApplicationService {
     }
 
     @Transactional
-    public LoanApplicationResponse decide(CurrentUser currentUser, Long applicationId, LoanDecisionRequest request) {
-        LoanApplication application = loanApplicationRepository.findById(applicationId)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "대출 신청을 찾을 수 없습니다."));
-
-        if (!"HQ_ADMIN".equals(currentUser.role())) {
-            User reviewer = userRepository.findById(currentUser.id())
-                    .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "사용자를 찾을 수 없습니다."));
-            if (reviewer.getLoanCompany() == null
-                    || !reviewer.getLoanCompany().getId().equals(application.getLoanCompany().getId())) {
-                throw new ApiException(HttpStatus.FORBIDDEN, "해당 신청 건에 대한 권한이 없습니다.");
-            }
+    public LoanApplicationResponse startReview(CurrentUser currentUser, Long applicationId) {
+        LoanApplication application = getApplicationForDecision(currentUser, applicationId);
+        if (application.getStatus() != LoanStatus.SUBMITTED) {
+            throw new ApiException(HttpStatus.CONFLICT, "요청 상태의 건만 심사를 시작할 수 있습니다.");
         }
+        application.setStatus(LoanStatus.UNDER_REVIEW);
+        application = loanApplicationRepository.save(application);
+        return LoanApplicationResponse.from(application);
+    }
+
+    @Transactional
+    public LoanApplicationResponse decide(CurrentUser currentUser, Long applicationId, LoanDecisionRequest request) {
+        LoanApplication application = getApplicationForDecision(currentUser, applicationId);
 
         if (request.approved()) {
             application.setStatus(LoanStatus.APPROVED);
@@ -161,6 +162,20 @@ public class LoanApplicationService {
         application.setDecidedAt(Instant.now());
         application = loanApplicationRepository.save(application);
         return LoanApplicationResponse.from(application);
+    }
+
+    private LoanApplication getApplicationForDecision(CurrentUser currentUser, Long applicationId) {
+        LoanApplication application = loanApplicationRepository.findById(applicationId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "대출 신청을 찾을 수 없습니다."));
+        if (!"HQ_ADMIN".equals(currentUser.role())) {
+            User reviewer = userRepository.findById(currentUser.id())
+                    .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "사용자를 찾을 수 없습니다."));
+            if (reviewer.getLoanCompany() == null
+                    || !reviewer.getLoanCompany().getId().equals(application.getLoanCompany().getId())) {
+                throw new ApiException(HttpStatus.FORBIDDEN, "해당 신청 건에 대한 권한이 없습니다.");
+            }
+        }
+        return application;
     }
 
     LoanApplication getOwnedApplication(CurrentUser currentUser, Long applicationId) {

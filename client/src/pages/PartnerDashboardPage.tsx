@@ -44,6 +44,14 @@ const PROFILE_DOCUMENT_LABEL: Record<string, string> = {
   BANK_STATEMENT: '통장사본',
 }
 
+const STATUS_STYLE: Record<string, { label: string; className: string }> = {
+  SUBMITTED: { label: '요청', className: 'bg-gray-100 text-gray-700' },
+  UNDER_REVIEW: { label: '심사중', className: 'bg-amber-100 text-amber-700' },
+  APPROVED: { label: '승인', className: 'bg-green-100 text-green-700' },
+  REJECTED: { label: '부결', className: 'bg-red-100 text-red-700' },
+  CONTRACT_COMPLETED: { label: '계약완료', className: 'bg-blue-100 text-blue-700' },
+}
+
 export default function PartnerDashboardPage() {
   const [applications, setApplications] = useState<LoanApplication[]>([])
   const [decisionState, setDecisionState] = useState<Record<number, { rate: string; limit: string; period: string; reason: string }>>({})
@@ -85,6 +93,11 @@ export default function PartnerDashboardPage() {
     load()
   }
 
+  async function startReview(id: number) {
+    await api.patch(`/api/partner/loan-applications/${id}/start-review`)
+    load()
+  }
+
   async function toggleApplicantDocs(id: number) {
     if (expandedId === id) {
       setExpandedId(null)
@@ -112,7 +125,9 @@ export default function PartnerDashboardPage() {
           const d = decisionState[app.id] ?? { rate: '', limit: '', period: '', reason: '' }
           const typeMeta = LOAN_TYPE_META[app.loanType]
           const TypeIcon = typeMeta?.Icon ?? CreditCard
-          const decidable = app.status === 'SUBMITTED' || app.status === 'UNDER_REVIEW'
+          const statusStyle = STATUS_STYLE[app.status] ?? { label: app.status, className: 'bg-gray-100 text-gray-700' }
+          const canStartReview = app.status === 'SUBMITTED'
+          const decidable = app.status === 'UNDER_REVIEW'
           const expanded = expandedId === app.id
           const docs = applicantDocs[app.id]
           return (
@@ -127,8 +142,8 @@ export default function PartnerDashboardPage() {
                     <p className="text-sm text-gray-500">{typeMeta?.label ?? app.loanType}</p>
                   </div>
                 </div>
-                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 shrink-0">
-                  {app.status}
+                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${statusStyle.className}`}>
+                  {statusStyle.label}
                 </span>
               </div>
 
@@ -161,6 +176,15 @@ export default function PartnerDashboardPage() {
                       </button>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {canStartReview && (
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <button onClick={() => startReview(app.id)}
+                    className="bg-amber-500 hover:bg-amber-600 transition text-white rounded-lg px-4 py-2 text-sm font-medium">
+                    심사 시작
+                  </button>
                 </div>
               )}
 

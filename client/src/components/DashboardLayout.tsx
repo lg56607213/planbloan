@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   Landmark, LogOut, Menu, X, Banknote, ClipboardList, FileText, UserCog,
-  Building2, ShieldCheck, ListChecks,
+  Building2, ShieldCheck, ListChecks, Users, FileSignature, Wallet, Calculator, LayoutDashboard,
 } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 
@@ -23,6 +23,11 @@ const MENUS: Record<string, MenuItem[]> = {
     { label: '업체 정보', to: '/partner/company', Icon: Building2 },
     { label: '대출조건', to: '/partner/criteria', Icon: ShieldCheck },
     { label: '심사 관리', to: '/partner', Icon: ListChecks },
+    { label: '고객관리', to: '/partner/customers', Icon: Users },
+    { label: '계약관리', to: '/partner/contracts', Icon: FileSignature },
+    { label: '수납관리', to: '/partner/payments', Icon: Wallet },
+    { label: '회계관리', to: '/partner/accounting', Icon: Calculator },
+    { label: '총괄관리', to: '/partner/overview', Icon: LayoutDashboard },
   ],
   HQ_ADMIN: [
     { label: '제휴사 관리', to: '/admin/partners', Icon: Building2 },
@@ -37,7 +42,9 @@ export default function DashboardLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const menus = (user && MENUS[user.role]) || []
-  const current = menus.find((m) => location.pathname.startsWith(m.to))
+  const current = [...menus]
+    .sort((a, b) => b.to.length - a.to.length)
+    .find((m) => location.pathname === m.to || location.pathname.startsWith(m.to + '/'))
 
   function handleLogout() {
     logout()
@@ -68,6 +75,7 @@ export default function DashboardLayout() {
               <li key={to}>
                 <NavLink
                   to={to}
+                  end
                   onClick={() => setMobileOpen(false)}
                   className={({ isActive }) =>
                     `flex items-center gap-2.5 px-5 py-2.5 text-sm transition ${

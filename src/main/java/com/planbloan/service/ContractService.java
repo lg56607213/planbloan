@@ -25,17 +25,20 @@ public class ContractService {
     private final ContractPdfService contractPdfService;
     private final FileStorageService fileStorageService;
     private final UserRepository userRepository;
+    private final ErpContractService erpContractService;
 
     public ContractService(LoanApplicationRepository loanApplicationRepository,
                             ContractRepository contractRepository,
                             ContractPdfService contractPdfService,
                             FileStorageService fileStorageService,
-                            UserRepository userRepository) {
+                            UserRepository userRepository,
+                            ErpContractService erpContractService) {
         this.loanApplicationRepository = loanApplicationRepository;
         this.contractRepository = contractRepository;
         this.contractPdfService = contractPdfService;
         this.fileStorageService = fileStorageService;
         this.userRepository = userRepository;
+        this.erpContractService = erpContractService;
     }
 
     @Transactional(readOnly = true)
@@ -82,6 +85,9 @@ public class ContractService {
 
         application.setStatus(LoanStatus.CONTRACT_COMPLETED);
         loanApplicationRepository.save(application);
+
+        // 대부업체 ERP 고객관리/계약관리로 자동 연동
+        erpContractService.createFromPlatform(application);
     }
 
     @Transactional(readOnly = true)
