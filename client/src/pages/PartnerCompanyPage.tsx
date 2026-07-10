@@ -74,10 +74,7 @@ export default function PartnerCompanyPage() {
 
   return (
     <div className="max-w-xl mx-auto space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">업체 정보 등록</h1>
-        <p className="text-sm text-gray-500 mt-1">아래 정보를 입력하고 승인을 요청하면 본사 검토 후 채무자 정보 열람이 가능합니다.</p>
-      </div>
+      <p className="text-sm text-gray-500">아래 정보를 입력하고 승인을 요청하면 본사 검토 후 채무자 정보 열람이 가능합니다.</p>
 
       {banner && (
         <div className={`flex items-start gap-2.5 border rounded-2xl p-4 ${banner.className}`}>

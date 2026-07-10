@@ -2,6 +2,12 @@ import { Link, Outlet, useNavigate } from 'react-router-dom'
 import { Landmark, LogOut } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 
+const HOME_BY_ROLE: Record<string, string> = {
+  CUSTOMER: '/my-applications',
+  PARTNER_ADMIN: '/partner/company',
+  HQ_ADMIN: '/admin/partners',
+}
+
 export default function Layout() {
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
@@ -27,14 +33,11 @@ export default function Layout() {
                 회원가입
               </Link>
             )}
-            {user?.role === 'CUSTOMER' && <Link to="/apply" className="px-2 py-1 text-gray-600 hover:text-gray-900">대출 신청</Link>}
-            {user?.role === 'CUSTOMER' && <Link to="/my-applications" className="px-2 py-1 text-gray-600 hover:text-gray-900">내 신청 내역</Link>}
-            {user?.role === 'PARTNER_ADMIN' && <Link to="/partner/company" className="px-2 py-1 text-gray-600 hover:text-gray-900">업체 정보</Link>}
-            {user?.role === 'PARTNER_ADMIN' && <Link to="/partner/criteria" className="px-2 py-1 text-gray-600 hover:text-gray-900">대출조건</Link>}
-            {(user?.role === 'PARTNER_ADMIN' || user?.role === 'HQ_ADMIN') && (
-              <Link to="/partner" className="px-2 py-1 text-gray-600 hover:text-gray-900">심사 관리</Link>
+            {user && (
+              <Link to={HOME_BY_ROLE[user.role] ?? '/'} className="px-3 py-1.5 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition">
+                내 화면으로 이동
+              </Link>
             )}
-            {user?.role === 'HQ_ADMIN' && <Link to="/admin/partners" className="px-2 py-1 text-gray-600 hover:text-gray-900">제휴사 관리</Link>}
             {user && (
               <button onClick={handleLogout} className="flex items-center gap-1 px-2 py-1 text-gray-500 hover:text-gray-800">
                 <LogOut size={14} />

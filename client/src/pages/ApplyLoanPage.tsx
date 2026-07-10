@@ -193,10 +193,7 @@ export default function ApplyLoanPage() {
   if (phase === 'offers') {
     return (
       <div className="max-w-lg mx-auto space-y-5">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">이용 가능한 대출 조건</h1>
-          <p className="text-sm text-gray-500 mt-1">입력하신 정보로 조회한 결과입니다. 원하는 조건을 선택해 신청해 주세요.</p>
-        </div>
+        <p className="text-sm text-gray-500">입력하신 정보로 조회한 결과입니다. 원하는 조건을 선택해 신청해 주세요.</p>
 
         {searched && offers.length === 0 && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 text-center text-gray-500">
@@ -239,10 +236,7 @@ export default function ApplyLoanPage() {
 
   return (
     <div className="max-w-lg mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">대출 신청</h1>
-        <p className="text-sm text-gray-500 mt-1">정보를 입력하시면 조건에 맞는 대부업체와 대출 조건을 바로 보여드립니다.</p>
-      </div>
+      <p className="text-sm text-gray-500 mb-6">정보를 입력하시면 조건에 맞는 대부업체와 대출 조건을 바로 보여드립니다.</p>
 
       <form onSubmit={handleFindOffers} className="space-y-4">
         <SectionCard step={1} title="대출종류">

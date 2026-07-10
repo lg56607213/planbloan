@@ -69,10 +69,7 @@ export default function PartnerCriteriaPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">대출조건 설정</h1>
-        <p className="text-sm text-gray-500 mt-1">대출종류별로 취급 한도, 금리, 자격 조건을 설정하면 조건에 맞는 고객에게 자동으로 노출됩니다.</p>
-      </div>
+      <p className="text-sm text-gray-500">대출종류별로 취급 한도, 금리, 자격 조건을 설정하면 조건에 맞는 고객에게 자동으로 노출됩니다.</p>
 
       {savedMessage && <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-xl px-4 py-2">{savedMessage}</p>}
 

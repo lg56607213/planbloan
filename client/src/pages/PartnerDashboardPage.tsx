@@ -72,7 +72,6 @@ export default function PartnerDashboardPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">대출 신청 심사</h1>
       <div className="space-y-4">
         {applications.map((app) => {
           const d = decisionState[app.id] ?? { rate: '', limit: '', period: '', reason: '' }

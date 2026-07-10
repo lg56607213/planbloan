@@ -10,6 +10,9 @@ build/
 # Uploaded files (local dev storage)
 uploads/
 
+# Local H2 database file (dev persistence)
+data/
+
 # Node / client
 client/node_modules/
 client/dist/

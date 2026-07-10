@@ -49,7 +49,6 @@ export default function MyApplicationsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">내 신청 내역</h1>
       {applications.length === 0 && (
         <p className="text-gray-500 bg-white border border-gray-200 rounded-2xl p-6 text-center">신청 내역이 없습니다.</p>
       )}

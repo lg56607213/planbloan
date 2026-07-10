@@ -65,10 +65,7 @@ export default function AdminPartnersPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">제휴사 계정 관리</h1>
-        <p className="text-sm text-gray-500 mt-1">대부업체에 발급할 아이디/비밀번호를 생성하고, 등록 승인을 처리합니다.</p>
-      </div>
+      <p className="text-sm text-gray-500">대부업체에 발급할 아이디/비밀번호를 생성하고, 등록 승인을 처리합니다.</p>
 
       <form onSubmit={handleCreate} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 sm:p-6 space-y-3">
         <h2 className="font-semibold text-gray-900 flex items-center gap-2"><UserPlus size={18} className="text-blue-600" /> 신규 제휴사 계정 발급</h2>
