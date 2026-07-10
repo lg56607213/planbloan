@@ -3,6 +3,7 @@ package com.planbloan.controller;
 import com.planbloan.dto.CreatePartnerAccountRequest;
 import com.planbloan.dto.PartnerAccountResponse;
 import com.planbloan.dto.RejectPartnerRequest;
+import com.planbloan.dto.ResetPartnerPasswordRequest;
 import com.planbloan.service.PartnerAccountService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
@@ -37,5 +38,11 @@ public class AdminPartnerController {
     @PatchMapping("/{companyId}/reject")
     public PartnerAccountResponse reject(@PathVariable Long companyId, @Valid @RequestBody RejectPartnerRequest request) {
         return partnerAccountService.reject(companyId, request.reason());
+    }
+
+    @PatchMapping("/{companyId}/reset-password")
+    public PartnerAccountResponse resetPassword(@PathVariable Long companyId,
+                                                 @Valid @RequestBody ResetPartnerPasswordRequest request) {
+        return partnerAccountService.resetPassword(companyId, request.newPassword());
     }
 }

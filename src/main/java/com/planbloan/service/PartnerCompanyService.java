@@ -26,13 +26,14 @@ public class PartnerCompanyService {
 
     @Transactional(readOnly = true)
     public PartnerAccountResponse getMyCompany(CurrentUser currentUser) {
-        LoanCompany company = resolveCompany(currentUser);
-        return PartnerAccountResponse.from(company, currentUser.email());
+        User user = resolveUser(currentUser);
+        return PartnerAccountResponse.from(user.getLoanCompany(), user);
     }
 
     @Transactional
     public PartnerAccountResponse submit(CurrentUser currentUser, CompanyInfoUpdateRequest request) {
-        LoanCompany company = resolveCompany(currentUser);
+        User user = resolveUser(currentUser);
+        LoanCompany company = user.getLoanCompany();
         if (company.getVerificationStatus() == CompanyVerificationStatus.APPROVED) {
             throw new ApiException(HttpStatus.CONFLICT, "이미 승인된 업체는 정보를 다시 제출할 수 없습니다. 본사에 문의해 주세요.");
         }
@@ -48,15 +49,15 @@ public class PartnerCompanyService {
         company.setVerificationStatus(CompanyVerificationStatus.PENDING_APPROVAL);
         company.setRejectionReason(null);
         company = loanCompanyRepository.save(company);
-        return PartnerAccountResponse.from(company, currentUser.email());
+        return PartnerAccountResponse.from(company, user);
     }
 
-    private LoanCompany resolveCompany(CurrentUser currentUser) {
+    private User resolveUser(CurrentUser currentUser) {
         User user = userRepository.findById(currentUser.id())
                 .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "사용자를 찾을 수 없습니다."));
         if (user.getLoanCompany() == null) {
             throw new ApiException(HttpStatus.FORBIDDEN, "소속된 대부업체가 없습니다.");
         }
-        return user.getLoanCompany();
+        return user;
     }
 }

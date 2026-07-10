@@ -1,11 +1,12 @@
 import { FormEvent, useEffect, useState } from 'react'
-import { UserPlus, CheckCircle2, XCircle, Building2 } from 'lucide-react'
+import { UserPlus, CheckCircle2, XCircle, Building2, KeyRound } from 'lucide-react'
 import { api } from '../api/client'
 
 interface PartnerAccount {
   companyId: number
   companyName: string
   username: string
+  password: string | null
   verificationStatus: string
   businessRegistrationNumber: string | null
   registrationNumber: string | null
@@ -29,6 +30,9 @@ export default function AdminPartnersPage() {
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [rejectReason, setRejectReason] = useState<Record<number, string>>({})
+  const [resetTarget, setResetTarget] = useState<number | null>(null)
+  const [resetPassword, setResetPassword] = useState('')
+  const [resetError, setResetError] = useState<string | null>(null)
 
   function load() {
     api.get('/api/admin/partners').then((res) => setPartners(res.data))
@@ -61,6 +65,27 @@ export default function AdminPartnersPage() {
     const reason = rejectReason[companyId] || '서류 미비'
     await api.patch(`/api/admin/partners/${companyId}/reject`, { reason })
     load()
+  }
+
+  function openResetForm(companyId: number) {
+    setResetTarget(companyId)
+    setResetPassword('')
+    setResetError(null)
+  }
+
+  async function submitReset(companyId: number) {
+    setResetError(null)
+    if (resetPassword.trim().length < 4) {
+      setResetError('비밀번호는 4자 이상 입력해 주세요.')
+      return
+    }
+    try {
+      await api.patch(`/api/admin/partners/${companyId}/reset-password`, { newPassword: resetPassword })
+      setResetTarget(null)
+      load()
+    } catch (err: any) {
+      setResetError(err.response?.data?.message ?? '비밀번호 재설정에 실패했습니다.')
+    }
   }
 
   return (
@@ -111,7 +136,9 @@ export default function AdminPartnersPage() {
                   </span>
                   <div>
                     <p className="font-semibold text-gray-900">{p.companyName}</p>
-                    <p className="text-sm text-gray-500">아이디: {p.username}</p>
+                    <p className="text-sm text-gray-500">
+                      아이디: {p.username} · 비밀번호: {p.password ?? <span className="text-gray-400">(재설정 필요)</span>}
+                    </p>
                   </div>
                 </div>
                 <span className={`text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${style.className}`}>{style.label}</span>
@@ -146,6 +173,36 @@ export default function AdminPartnersPage() {
               {p.verificationStatus === 'REJECTED' && p.rejectionReason && (
                 <p className="mt-3 pt-3 border-t border-gray-100 text-sm text-red-700">반려 사유: {p.rejectionReason}</p>
               )}
+
+              <div className="mt-3 pt-3 border-t border-gray-100">
+                {resetTarget === p.companyId ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      autoFocus
+                      placeholder="새 비밀번호"
+                      value={resetPassword}
+                      onChange={(e) => setResetPassword(e.target.value)}
+                      className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm"
+                    />
+                    <button onClick={() => submitReset(p.companyId)}
+                      className="bg-blue-600 hover:bg-blue-700 transition text-white rounded-lg px-3 py-1.5 text-sm font-medium">
+                      확인
+                    </button>
+                    <button onClick={() => setResetTarget(null)}
+                      className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm text-gray-600">
+                      취소
+                    </button>
+                  </div>
+                ) : (
+                  <button onClick={() => openResetForm(p.companyId)}
+                    className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium">
+                    <KeyRound size={14} /> 비밀번호 재설정
+                  </button>
+                )}
+                {resetTarget === p.companyId && resetError && (
+                  <p className="text-red-600 text-xs mt-1.5">{resetError}</p>
+                )}
+              </div>
             </div>
           )
         })}

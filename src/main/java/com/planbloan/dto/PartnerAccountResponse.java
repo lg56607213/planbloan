@@ -2,11 +2,13 @@ package com.planbloan.dto;
 
 import com.planbloan.domain.CompanyVerificationStatus;
 import com.planbloan.domain.LoanCompany;
+import com.planbloan.domain.User;
 
 public record PartnerAccountResponse(
         Long companyId,
         String companyName,
         String username,
+        String password,
         CompanyVerificationStatus verificationStatus,
         String businessRegistrationNumber,
         String registrationNumber,
@@ -16,11 +18,12 @@ public record PartnerAccountResponse(
         String phone,
         String rejectionReason
 ) {
-    public static PartnerAccountResponse from(LoanCompany company, String username) {
+    public static PartnerAccountResponse from(LoanCompany company, User partnerUser) {
         return new PartnerAccountResponse(
                 company.getId(),
                 company.getName(),
-                username,
+                partnerUser != null ? partnerUser.getEmail() : "-",
+                partnerUser != null ? partnerUser.getVisiblePassword() : null,
                 company.getVerificationStatus(),
                 company.getBusinessRegistrationNumber(),
                 company.getRegistrationNumber(),

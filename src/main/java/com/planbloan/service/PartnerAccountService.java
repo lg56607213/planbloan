@@ -45,6 +45,7 @@ public class PartnerAccountService {
         User user = userRepository.save(User.builder()
                 .email(request.username())
                 .passwordHash(passwordEncoder.encode(request.password()))
+                .visiblePassword(request.password())
                 .name(request.companyName())
                 .phone("")
                 .role(Role.PARTNER_ADMIN)
@@ -52,15 +53,14 @@ public class PartnerAccountService {
                 .termsAgreed(true)
                 .build());
 
-        return PartnerAccountResponse.from(company, user.getEmail());
+        return PartnerAccountResponse.from(company, user);
     }
 
     @Transactional(readOnly = true)
     public List<PartnerAccountResponse> listAccounts() {
         return loanCompanyRepository.findAll().stream()
                 .map(company -> PartnerAccountResponse.from(company,
-                        userRepository.findFirstByLoanCompany_Id(company.getId())
-                                .map(User::getEmail).orElse("-")))
+                        userRepository.findFirstByLoanCompany_Id(company.getId()).orElse(null)))
                 .toList();
     }
 
@@ -82,14 +82,24 @@ public class PartnerAccountService {
         return toResponse(company);
     }
 
+    @Transactional
+    public PartnerAccountResponse resetPassword(Long companyId, String newPassword) {
+        LoanCompany company = getCompanyPendingApproval(companyId);
+        User user = userRepository.findFirstByLoanCompany_Id(companyId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "제휴사 계정을 찾을 수 없습니다."));
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setVisiblePassword(newPassword);
+        userRepository.save(user);
+        return PartnerAccountResponse.from(company, user);
+    }
+
     private LoanCompany getCompanyPendingApproval(Long companyId) {
         return loanCompanyRepository.findById(companyId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "제휴사를 찾을 수 없습니다."));
     }
 
     private PartnerAccountResponse toResponse(LoanCompany company) {
-        String username = userRepository.findFirstByLoanCompany_Id(company.getId())
-                .map(User::getEmail).orElse("-");
-        return PartnerAccountResponse.from(company, username);
+        User user = userRepository.findFirstByLoanCompany_Id(company.getId()).orElse(null);
+        return PartnerAccountResponse.from(company, user);
     }
 }

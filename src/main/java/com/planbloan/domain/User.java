@@ -29,6 +29,10 @@ public class User {
     @Column(nullable = false)
     private String passwordHash;
 
+    /** 본사가 발급한 제휴사 계정의 비밀번호를 평문으로도 보관 - 분실 시 본사가 확인/재발급할 수 있도록.
+     *  고객(CUSTOMER) 계정에는 사용하지 않음. */
+    private String visiblePassword;
+
     @Column(nullable = false)
     private String name;
 
