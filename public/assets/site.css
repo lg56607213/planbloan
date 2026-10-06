@@ -296,3 +296,37 @@ body.bare{background:var(--bg-2)}
   .nb-text strong{display:block;margin:0 0 4px;font-size:16.5px}
   .nb-link{width:100%;text-align:center;padding:9px 14px}
 }
+.nb-ok{display:inline-block;margin-left:10px;font-size:15px;font-weight:700;color:#9FE3B4;white-space:nowrap}
+.nb-ok::before{content:"✓ "}
+@media(max-width:640px){ .nb-ok{display:block;margin:6px 0 0} }
+
+/* ── 공지 팝업 : 신용대출 취급 중지 (assets/notice-popup.js) ── */
+.np-overlay{position:fixed;inset:0;z-index:200;background:rgba(10,20,34,.55);
+  display:flex;align-items:center;justify-content:center;padding:16px;animation:np-fade .2s ease-out}
+.np-card{width:100%;max-width:420px;word-break:keep-all;outline:none;background:#fff;border-radius:16px;overflow:hidden;
+  box-shadow:0 24px 60px rgba(10,20,34,.35);animation:np-up .25s ease-out}
+.np-head{background:linear-gradient(135deg,var(--navy) 0%,var(--navy-2) 100%);color:#fff;
+  padding:26px 24px 22px;text-align:center;border-bottom:4px solid var(--orange)}
+.np-badge{display:inline-block;background:var(--orange);color:#fff;font-size:13px;font-weight:700;
+  padding:4px 14px;border-radius:999px;margin-bottom:12px}
+.np-head h2{margin:0 0 12px;color:#fff;font-size:23px;letter-spacing:-.02em;line-height:1.35}
+.np-date{display:inline-block;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);
+  border-radius:6px;padding:3px 12px;font-size:15px;font-weight:600;color:#FFD9B5}
+.np-body{padding:22px 24px 6px;text-align:center}
+.np-body p{margin:0 0 16px;font-size:16.5px;line-height:1.7;color:var(--ink)}
+.np-ok{display:flex;align-items:center;justify-content:center;gap:9px;background:#E8F5EC;
+  border:1px solid #BFE3CB;color:#1B6B37;border-radius:10px;padding:14px 12px;font-size:17.5px;font-weight:700}
+.np-check{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;
+  border-radius:50%;background:#1B8A47;color:#fff;font-size:14px;flex:none}
+.np-actions{display:flex;flex-direction:column;gap:8px;margin:18px 0 16px}
+.np-actions .btn{width:100%;justify-content:center;text-align:center}
+.np-tel{border:2px solid var(--line);color:var(--ink-2);background:#fff}
+.np-tel:hover{border-color:var(--blue);color:var(--blue-d)}
+.np-foot{display:flex;border-top:1px solid var(--line);background:var(--bg-2)}
+.np-foot button{flex:1;padding:14px 10px;border:0;background:none;font:inherit;font-size:15px;
+  color:var(--ink-2);cursor:pointer}
+.np-foot button+button{border-left:1px solid var(--line);font-weight:700;color:var(--navy)}
+.np-foot button:hover{background:#EDF2F7}
+@keyframes np-fade{from{opacity:0}to{opacity:1}}
+@keyframes np-up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.np-overlay,.np-card{animation:none}}
