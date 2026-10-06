@@ -1,5 +1,39 @@
 # planbloan.co.kr — 플랜비대부주식회사 홈페이지
 
+> ## 경고 — 이 저장소로 배포하지 말 것
+>
+> **이 저장소에는 서버 코드가 빠져 있다.** 정적 HTML 만 들어 있다.
+>
+> 실제 서비스에는 Cloudflare Pages Functions 로 도는 서버 코드가 함께 올라가 있고,
+> 그 코드가 D1 데이터베이스 `planbloan` 과 환경변수를 쓴다.
+> 이 저장소 상태로 `wrangler pages deploy` 를 하면 아래가 전부 멈춘다.
+>
+> - 관리자 로그인 (`/admin` — 지금은 302 로 응답한다)
+> - 게시판 글·조회수 (`posts` 테이블)
+> - 대출신청 접수와 메일 알림 (`applications` 테이블, Resend)
+>
+> 데이터는 D1 에 남아 있으므로 서버 코드만 되찾으면 복구된다.
+> 그때까지 **배포 금지.**
+>
+> ### 빠진 것
+> ```
+> functions/          Pages Functions 서버 코드
+> wrangler.toml       D1 바인딩 · 환경변수 설정
+> ```
+>
+> ### 쓰이는 자원 (Cloudflare 에 그대로 있다)
+> | 종류 | 이름 |
+> |---|---|
+> | D1 | `planbloan` (c76d142f-40f5-4d53-87eb-cb63442e6a37) |
+> | 테이블 | admins · sessions · login_attempts · posts · applications |
+> | 환경변수 | RESEND_API_KEY · MAIL_FROM · NOTIFY_TO · SETUP_TOKEN · SITE_NAME |
+>
+> ### 되찾는 방법
+> 1. 예전에 planbloan 을 작업하던 PC 에서 `functions/` 와 `wrangler.toml` 을 찾아
+>    이 저장소에 커밋한다. (가장 빠르고 확실하다)
+> 2. 못 찾으면 D1 스키마와 사이트 동작을 보고 새로 작성한다.
+>    시간이 걸리고 기존과 똑같이 동작한다는 보장이 없다.
+
 Cloudflare **Pages** 프로젝트 `planbloan` 이 서비스하는 정적 사이트.
 
 | 항목 | 값 |
@@ -59,7 +93,7 @@ python -m http.server 8000
 
 Pages 프로젝트에 Git 이 연결돼 있지 않다. 두 가지 방법이 있다.
 
-**1) 지금처럼 직접 업로드**
+**1) 직접 업로드 — 서버 코드를 되찾기 전에는 하지 말 것**
 
 ```
 npx wrangler pages deploy . --project-name planbloan
