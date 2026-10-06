@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>대출 이자 계산기 | 플랜비대부</title>
+<meta name="description" content="대출금액, 금리, 기간, 상환방식을 입력하면 월 납입금과 총 이자를 바로 계산합니다. 원리금균등·원금균등·만기일시 모두 지원합니다.">
+<style>
+:root{
+  --bg:#F5F8FC; --card:#fff; --ink:#101418; --ink2:#5A6472; --muted:#8A93A0;
+  --line:#E3E9F0; --a:#2A78D6; --b:#EB6834; --good:#0CA30C; --warn:#FAB219;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:16px/1.65 system-ui,-apple-system,"Malgun Gothic","Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:560px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:22px;font-weight:700;margin:0 0 6px;letter-spacing:-.02em}
+.sub{color:var(--ink2);font-size:14px;margin:0 0 20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 16px;margin-bottom:14px}
+label{display:block;font-size:14px;font-weight:600;color:var(--ink2);margin:0 0 7px}
+input,select{width:100%;padding:13px 14px;font:inherit;font-size:17px;
+  border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);
+  -webkit-appearance:none;appearance:none}
+input{font-variant-numeric:tabular-nums}
+input:focus,select:focus{outline:2px solid var(--a);outline-offset:-1px;border-color:transparent}
+select{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path d='M1 1l5 5 5-5' stroke='%235A6472' stroke-width='2' fill='none' stroke-linecap='round'/></svg>");
+  background-repeat:no-repeat;background-position:right 14px center}
+.field{margin-bottom:15px}
+.field:last-child{margin-bottom:0}
+.hint{font-size:12.5px;color:var(--muted);margin-top:6px}
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+.chips button{background:#F2F6FA;border:1px solid var(--line);border-radius:999px;
+  padding:6px 13px;font:inherit;font-size:13px;color:var(--ink2);cursor:pointer}
+.chips button:hover{border-color:var(--a);color:var(--a)}
+.chips button.manual{background:#fff;border-style:dashed;border-color:#C3CEDB;color:var(--muted)}
+.chips button.manual:hover{border-color:var(--a);color:var(--a)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.result{background:linear-gradient(160deg,#2A78D6,#1C5CAB);color:#fff;border:0}
+.result .big{font-size:34px;font-weight:750;letter-spacing:-.03em;line-height:1.15;margin:2px 0 3px}
+.result .cap{font-size:13.5px;opacity:.85}
+.rows{margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.25)}
+.row{display:flex;justify-content:space-between;padding:6px 0;font-size:15px}
+.row b{font-weight:650;font-variant-numeric:tabular-nums}
+.warn{background:#FFF8E6;border:1px solid #F5DFA6;color:#7A5A00;border-radius:10px;
+  padding:11px 13px;font-size:13.5px;margin-top:12px;display:none}
+.warn.on{display:block}
+details{margin-top:12px}
+summary{cursor:pointer;font-size:14px;font-weight:600;color:var(--a);padding:8px 0;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"▸ ";display:inline-block;transition:transform .15s}
+details[open] summary::before{content:"▾ "}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+th{text-align:right;font-weight:600;color:var(--ink2);font-size:11.5px;padding:0 6px 7px 0;
+  border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child{text-align:left}
+td{padding:7px 6px 7px 0;border-bottom:1px solid var(--line);text-align:right;
+  font-variant-numeric:tabular-nums}
+td:first-child{text-align:left;color:var(--ink2)}
+tr:last-child td{border-bottom:0;font-weight:650}
+.cta{display:block;width:100%;text-align:center;background:var(--b);color:#fff;text-decoration:none;
+  padding:16px;border-radius:12px;font-weight:700;font-size:17px;margin-top:6px}
+.cta:active{filter:brightness(.94)}
+.tel{display:block;text-align:center;margin-top:11px;color:var(--ink2);font-size:15px;text-decoration:none}
+.tel b{color:var(--ink)}
+.legal{font-size:11.5px;color:var(--muted);line-height:1.7;margin-top:24px;
+  padding-top:16px;border-top:1px solid var(--line)}
+.legal strong{color:var(--ink2)}
+@media(max-width:400px){.result .big{font-size:29px}}
+</style></head><body>
+<div class="wrap">
+
+<h1>대출 이자 계산기</h1>
+<p class="sub">금액·금리·기간·상환방식을 넣으면 월 납입금과 총 이자가 바로 나옵니다.</p>
+
+<div class="card">
+  <div class="field">
+    <label for="amt">대출 금액</label>
+    <input id="amt" type="text" inputmode="numeric" autocomplete="off" value="3,000,000">
+    <div class="chips">
+      <button class="manual" data-focus="amt">직접 입력</button>
+      <button data-amt="1000000">100만</button>
+      <button data-amt="2000000">200만</button>
+      <button data-amt="3000000">300만</button>
+      <button data-amt="5000000">500만</button>
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="rate">연 이자율 (%)</label>
+    <input id="rate" type="number" inputmode="decimal" value="20" min="0" max="30" step="0.1">
+    <div class="chips">
+      <button class="manual" data-focus="rate">직접 입력</button>
+      <button data-rate="18">18%</button>
+      <button data-rate="19">19%</button>
+      <button data-rate="20">20%</button>
+    </div>
+    <div class="hint">법정 최고금리는 연 20%입니다.</div>
+  </div>
+
+  <div class="field">
+    <label for="months">대출 기간 (개월)</label>
+    <input id="months" type="number" inputmode="numeric" value="12" min="1" max="120" step="1">
+    <div class="chips">
+      <button class="manual" data-focus="months">직접 입력</button>
+      <button data-m="6">6개월</button>
+      <button data-m="12">12개월</button>
+      <button data-m="24">24개월</button>
+      <button data-m="36">36개월</button>
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="method">상환 방식</label>
+    <select id="method">
+      <option value="equal">원리금균등 — 매달 같은 금액</option>
+      <option value="principal">원금균등 — 원금 고정, 이자 감소</option>
+      <option value="bullet">만기일시 — 이자만 내다 만기에 원금</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label>납입금 단위 처리</label>
+    <div class="two">
+      <select id="unit">
+        <option value="1">원 단위 (절사 없음)</option>
+        <option value="10">십 원 단위</option>
+        <option value="100">백 원 단위</option>
+        <option value="1000">천 원 단위</option>
+      </select>
+      <select id="mode">
+        <option value="floor">절사 (내림)</option>
+        <option value="round">반올림</option>
+        <option value="ceil">절상 (올림)</option>
+      </select>
+    </div>
+    <div class="hint">월 납입금을 지정한 단위로 맞춥니다. 남거나 모자란 금액은 마지막 회차에서 정산됩니다.</div>
+  </div>
+</div>
+
+<div class="card result">
+  <div class="cap" id="cap">월 납입금</div>
+  <div class="big" id="monthly">-</div>
+  <div class="rows">
+    <div class="row"><span>총 상환액</span><b id="total">-</b></div>
+    <div class="row"><span>총 이자</span><b id="interest">-</b></div>
+    <div class="row"><span>원금</span><b id="principal">-</b></div>
+    <div class="row" id="lastNote" style="display:none"><span>마지막 회차</span><b>-</b></div>
+  </div>
+</div>
+
+<div class="warn" id="warn"></div>
+
+<details>
+  <summary>월별 상환 내역 보기</summary>
+  <table>
+    <thead><tr><th>회차</th><th>납입금</th><th>원금</th><th>이자</th><th>잔액</th></tr></thead>
+    <tbody id="sched"></tbody>
+  </table>
+</details>
+
+<div class="card" style="margin-top:16px">
+  <div style="font-weight:650;margin-bottom:4px">계산 결과가 부담되신다면</div>
+  <div style="font-size:14px;color:var(--ink2);margin-bottom:14px">
+    금액을 줄이거나 기간을 조정해 보세요. 갚을 수 있는 만큼만 빌리시는 것이 가장 중요합니다.
+  </div>
+  <a class="cta" id="cta" href="#">내 조건으로 상담 신청하기</a>
+  <a class="tel" href="tel:02-6925-0517">전화 상담 <b>02-6925-0517</b></a>
+</div>
+
+<div class="legal">
+  <strong>플랜비대부주식회사</strong> (사업자등록번호 431-86-03146) | 대표이사 박동천<br>
+  대부업 등록번호 2025-서울영등포-0048 (등록기관 서울특별시 영등포구)<br>
+  대부이자율 연 18~20% | 연체이자율 약정이자율 + 연 3%p (연 20% 초과 불가)<br>
+  취급수수료 없음 | 조기상환수수료 면제 (신용대출, 현행) | 상환방식 원리금균등상환<br>
+  주소 서울특별시 영등포구 여의대방로379 (여의도동, 제일빌딩) 6층 605호<br>
+  전화 02-6925-0517 | 이메일 <a href="mailto:jdgp@jdgp.co.kr">jdgp@jdgp.co.kr</a><br><br>
+  <strong>과도한 빚은 당신에게 큰 불행을 안겨줄 수 있습니다.</strong><br>
+  대출 계약과 관련하여 귀하의 신용조회 기록이 남을 수 있습니다.<br>
+  중개수수료를 요구하거나 받는 것은 불법입니다.<br><br>
+  본 계산기는 참고용이며 실제 상환액은 실행일·상환일에 따라 달라질 수 있습니다.
+</div>
+
+</div><script>
+const $ = id => document.getElementById(id)
+const won = n => Math.round(n).toLocaleString('ko-KR') + '원'
+
+// 유입 경로 보존 — 어떤 키워드로 들어와 계산하고 문의했는지 추적하기 위함.
+// 문의 페이지로 넘길 때 그대로 전달한다.
+const ENTRY = (() => {
+  const q = new URLSearchParams(location.search)
+  const keep = {}
+  for (const k of ['utm_source','utm_medium','utm_campaign','utm_term','utm_content']) {
+    if (q.get(k)) keep[k] = q.get(k)
+  }
+  if (!keep.utm_source && document.referrer) {
+    try { keep.referrer = new URL(document.referrer).hostname } catch {}
+  }
+  try {
+    const saved = JSON.parse(sessionStorage.getItem('pb_entry') || '{}')
+    const merged = Object.keys(keep).length ? keep : saved
+    sessionStorage.setItem('pb_entry', JSON.stringify(merged))
+    return merged
+  } catch { return keep }
+})()
+
+const INQUIRY_URL = '/apply/form'
+
+// ── 금액 입력란 천단위 콤마 ───────────────────────────────────────────────────
+// type=number 는 콤마를 표시할 수 없어 text 로 두고 직접 포맷한다.
+// 커서 앞의 숫자 개수를 세어 두었다가 포맷 후 같은 자리로 되돌린다.
+// (그러지 않으면 가운데를 수정할 때마다 커서가 맨 끝으로 튄다)
+const digitsOnly = s => String(s).replace(/[^\d]/g, '')
+const comma = s => { const d = digitsOnly(s); return d ? Number(d).toLocaleString('ko-KR') : '' }
+
+function formatAmount(el) {
+  const before = el.value.slice(0, el.selectionStart ?? el.value.length)
+  const digitsBefore = digitsOnly(before).length
+  el.value = comma(el.value)
+  let pos = 0, seen = 0
+  while (pos < el.value.length && seen < digitsBefore) {
+    if (/\d/.test(el.value[pos])) seen++
+    pos++
+  }
+  try { el.setSelectionRange(pos, pos) } catch {}
+}
+
+// 지정 단위로 절사/반올림/절상. unit 1 이면 원 단위 그대로.
+function unitize(v, unit, mode) {
+  if (!unit || unit <= 1) return v
+  if (mode === 'floor') return Math.floor(v / unit) * unit
+  if (mode === 'ceil') return Math.ceil(v / unit) * unit
+  return Math.round(v / unit) * unit
+}
+
+// 단위를 맞추면 매달 조금씩 오차가 생긴다. 그 차액은 마지막 회차에서 정산해
+// 잔액이 정확히 0으로 끝나도록 한다.
+function schedule(P, annual, n, method, unit, mode) {
+  const r = annual / 100 / 12
+  const rows = []
+  let bal = P
+
+  if (method === 'equal') {
+    const raw = r === 0 ? P / n : P * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1)
+    const m = unitize(raw, unit, mode)
+    for (let i = 1; i <= n; i++) {
+      const int = bal * r
+      let pri = m - int
+      if (i === n || pri >= bal) pri = bal          // 마지막 회차에서 잔액 정산
+      if (pri < 0) pri = 0                          // 납입금이 이자보다 작은 경우 방어
+      bal = Math.max(0, bal - pri)
+      rows.push({ i, pay: pri + int, pri, int, bal })
+      if (bal === 0 && i < n) {                     // 조기 완납 시 나머지 회차는 0
+        for (let j = i + 1; j <= n; j++) rows.push({ i: j, pay: 0, pri: 0, int: 0, bal: 0 })
+        break
+      }
+    }
+  } else if (method === 'principal') {
+    const basePri = P / n
+    for (let i = 1; i <= n; i++) {
+      const int = bal * r
+      let pay = unitize(basePri + int, unit, mode)
+      let pri = pay - int
+      if (i === n || pri >= bal) { pri = bal; pay = pri + int }
+      if (pri < 0) pri = 0
+      bal = Math.max(0, bal - pri)
+      rows.push({ i, pay, pri, int, bal })
+    }
+  } else {
+    const int = unitize(P * r, unit, mode)
+    for (let i = 1; i <= n; i++) {
+      const pri = i === n ? P : 0
+      bal = i === n ? 0 : P
+      rows.push({ i, pay: pri + int, pri, int, bal })
+    }
+  }
+  return rows
+}
+
+function calc() {
+  const P = Math.max(0, Number(digitsOnly($('amt').value)) || 0)
+  const rate = Math.max(0, Number($('rate').value) || 0)
+  const n = Math.max(1, Math.min(120, Math.round(Number($('months').value) || 1)))
+  const method = $('method').value
+  const unit = Number($('unit').value) || 1
+  const mode = $('mode').value
+
+  const rows = schedule(P, rate, n, method, unit, mode)
+  const total = rows.reduce((s, x) => s + x.pay, 0)
+  const interest = total - P
+  const last = rows[rows.length - 1]
+
+  if (method === 'equal') {
+    $('cap').textContent = unit > 1
+      ? `월 납입금 (${unit.toLocaleString('ko-KR')}원 단위 ${ { floor: '절사', ceil: '절상', round: '반올림' }[mode] })`
+      : '월 납입금'
+    $('monthly').textContent = won(rows[0].pay)
+  } else if (method === 'principal') {
+    $('cap').textContent = '월 납입금 (첫 달 → 마지막 달)'
+    $('monthly').textContent = won(rows[0].pay) + ' → ' + won(rows[n - 1].pay)
+  } else {
+    $('cap').textContent = '매달 이자 (만기에 원금 상환)'
+    $('monthly').textContent = won(rows[0].int)
+  }
+
+  $('total').textContent = won(total)
+  $('interest').textContent = won(interest)
+  $('principal').textContent = won(P)
+
+  // 단위 절사/절상으로 마지막 회차가 달라지면 알려준다
+  const lastNote = $('lastNote')
+  if (unit > 1 && method !== 'bullet' && Math.abs(last.pay - rows[0].pay) >= 1) {
+    lastNote.style.display = 'flex'
+    lastNote.querySelector('b').textContent = won(last.pay)
+  } else {
+    lastNote.style.display = 'none'
+  }
+
+  const w = $('warn')
+  if (rate > 20) {
+    w.className = 'warn on'
+    w.innerHTML = '<b>연 20%는 법정 최고금리입니다.</b> 이를 초과하는 이자 약정은 무효이며, 초과분은 지급하지 않으셔도 됩니다.'
+  } else if (P > 0 && interest / P > 0.5) {
+    w.className = 'warn on'
+    w.innerHTML = '<b>총 이자가 원금의 절반을 넘습니다.</b> 기간을 줄이거나 금액을 낮추는 편이 부담이 적습니다.'
+  } else {
+    w.className = 'warn'
+  }
+
+  const tb = $('sched')
+  tb.innerHTML = rows.map(x =>
+    `<tr><td>${x.i}회</td><td>${Math.round(x.pay).toLocaleString('ko-KR')}</td>` +
+    `<td>${Math.round(x.pri).toLocaleString('ko-KR')}</td>` +
+    `<td>${Math.round(x.int).toLocaleString('ko-KR')}</td>` +
+    `<td>${Math.round(x.bal).toLocaleString('ko-KR')}</td></tr>`).join('')
+
+  const q = new URLSearchParams({ ...ENTRY, amount: P, rate, months: n, method })
+  $('cta').href = INQUIRY_URL + '?' + q.toString()
+}
+
+document.querySelectorAll('.chips button').forEach(b => b.onclick = () => {
+  if (b.dataset.focus) {                 // "직접 입력" — 해당 칸으로 커서를 옮기고 전체 선택
+    const el = $(b.dataset.focus)
+    el.focus(); el.select()
+    return
+  }
+  if (b.dataset.amt) $('amt').value = comma(b.dataset.amt)
+  if (b.dataset.rate) $('rate').value = b.dataset.rate
+  if (b.dataset.m) $('months').value = b.dataset.m
+  calc()
+})
+
+$('amt').addEventListener('input', e => { formatAmount(e.target); calc() })
+$('amt').addEventListener('blur', e => { e.target.value = comma(e.target.value); calc() })
+;['rate','months','method','unit','mode'].forEach(id => {
+  $(id).addEventListener('input', calc)
+  $(id).addEventListener('change', calc)
+})
+calc()
+</script>
+</body></html>

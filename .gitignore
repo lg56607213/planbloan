@@ -1,32 +1,9 @@
-# Gradle
-.gradle/
-build/
-!gradle/wrapper/gradle-wrapper.jar
+# Cloudflare 로컬 상태와 계정 캐시
+.wrangler/
 
-# Java
-*.class
-*.log
+node_modules/
 
-# Uploaded files (local dev storage)
-uploads/
-
-# Local H2 database file (dev persistence)
-data/
-
-# Node / client
-client/node_modules/
-client/dist/
-client/tsconfig.app.tsbuildinfo
-client/tsconfig.node.tsbuildinfo
-client/vite.config.js
-client/vite.config.d.ts
-client/.env
-
-# IDE
-.idea/
-.vscode/
-*.iml
-
-# OS
-.DS_Store
+# OS 부산물
 Thumbs.db
+desktop.ini
+.DS_Store
