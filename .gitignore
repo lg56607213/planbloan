@@ -7,3 +7,8 @@ node_modules/
 Thumbs.db
 desktop.ini
 .DS_Store
+
+# 만들지 않는다 — 대시보드 환경변수를 덮어쓴다 (README 배포 참고)
+wrangler.toml
+wrangler.json
+wrangler.jsonc

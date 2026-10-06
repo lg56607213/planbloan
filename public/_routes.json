@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "include": ["/board/*", "/apply/form", "/admin", "/admin/*"],
+  "exclude": []
+}
